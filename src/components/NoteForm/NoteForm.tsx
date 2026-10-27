@@ -1,11 +1,10 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { NoteTag } from "../../types/note";
 
 import { createNote } from "../../services/noteService";
 import css from "./NoteForm.module.css";
-
-type NoteTag = "Todo" | "Work" | "Personal" | "Shopping";
 
 interface NoteFormProps {
   onClose: () => void;

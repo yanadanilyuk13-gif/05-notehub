@@ -1,21 +1,64 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useDebouncedCallback } from "use-debounce";
+
 import { fetchNotes } from "../../services/noteService";
+
 import NoteList from "../NoteList/NoteList";
+import Pagination from "../Pagination/Pagination";
+import Modal from "../Modal/Modal";
+import NoteForm from "../NoteForm/NoteForm";
+import SearchBox from "../SearchBox/SearchBox";
+
 import css from "./App.module.css";
 
 export default function App() {
-  // const [count, setCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [inputValue, setInputValue] = useState("");
+  const [search, setSearch] = useState("");
+
+  const debouncedSearch = useDebouncedCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, 500);
+
+  const handleSearchChange = (value: string) => {
+    setInputValue(value);
+    debouncedSearch(value);
+  };
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["notes", 1, ""],
-    queryFn: () => fetchNotes(1, ""),
+    queryKey: ["notes", page, search],
+    queryFn: () => fetchNotes(page, search),
+    placeholderData: keepPreviousData,
   });
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
 
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        {/* Компонент SearchBox */}
-        {/* Пагінація */}
-        {/* Кнопка створення нотатки */}
+        <SearchBox value={inputValue} onChange={handleSearchChange} />
+
+        {data && data.totalPages > 1 && (
+          <Pagination
+            pageCount={data.totalPages}
+            currentPage={page}
+            onPageChange={setPage}
+          />
+        )}
+
+        <button type="button" className={css.button} onClick={openModal}>
+          Create note +
+        </button>
       </header>
 
       {isLoading && <p>Loading notes...</p>}
@@ -23,8 +66,12 @@ export default function App() {
       {isError && <p>Failed to load notes.</p>}
 
       {data && data.notes.length > 0 && <NoteList notes={data.notes} />}
+
+      {isModalOpen && (
+        <Modal onClose={closeModal}>
+          <NoteForm onClose={closeModal} />
+        </Modal>
+      )}
     </div>
   );
 }
-
-export default App;
